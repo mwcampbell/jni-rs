@@ -315,6 +315,7 @@ impl<'local> JNIEnv<'local> {
     /// # Ok(())
     /// # }
     /// ```
+    #[profiling::function]
     pub fn find_class<S>(&mut self, name: S) -> Result<JClass<'local>>
     where
         S: Into<JNIString>,
@@ -1354,18 +1355,18 @@ impl<'local> JNIEnv<'local> {
     ///
     /// Note: this may cause a Java exception if the arguments are the wrong
     /// type, in addition to if the method itself throws.
-    pub fn call_method<'other_local, O, S, T>(
+    pub fn call_method<'other_local, O, T>(
         &mut self,
         obj: O,
-        name: S,
+        name: &str,
         sig: T,
         args: &[JValue],
     ) -> Result<JValueOwned<'local>>
     where
         O: AsRef<JObject<'other_local>>,
-        S: Into<JNIString>,
         T: Into<JNIString> + AsRef<str>,
     {
+        profiling::scope!(name);
         let obj = obj.as_ref();
         non_null!(obj, "call_method obj argument");
 
@@ -1413,18 +1414,18 @@ impl<'local> JNIEnv<'local> {
     ///
     /// Note: this may cause a Java exception if the arguments are the wrong
     /// type, in addition to if the method itself throws.
-    pub fn call_static_method<'other_local, T, U, V>(
+    pub fn call_static_method<'other_local, T, V>(
         &mut self,
         class: T,
-        name: U,
+        name: &str,
         sig: V,
         args: &[JValue],
     ) -> Result<JValueOwned<'local>>
     where
         T: Desc<'local, JClass<'other_local>>,
-        U: Into<JNIString>,
         V: Into<JNIString> + AsRef<str>,
     {
+        profiling::scope!(name);
         let parsed = TypeSignature::from_str(&sig)?;
         if parsed.args.len() != args.len() {
             return Err(Error::InvalidArgList(parsed));
@@ -1460,6 +1461,7 @@ impl<'local> JNIEnv<'local> {
 
     /// Create a new object using a constructor. This is done safely using
     /// checks similar to those in `call_static_method`.
+    #[profiling::function]
     pub fn new_object<'other_local, T, U>(
         &mut self,
         class: T,
@@ -1642,6 +1644,7 @@ impl<'local> JNIEnv<'local> {
     /// Create a new java string object from a rust string. This requires a
     /// re-encoding of rusts *real* UTF-8 strings to java's modified UTF-8
     /// format.
+    #[profiling::function]
     pub fn new_string<S: Into<JNIString>>(&self, from: S) -> Result<JString<'local>> {
         let ffi_str = from.into();
         let s = jni_non_null_call!(self.internal, NewStringUTF, ffi_str.as_ptr());
@@ -1793,6 +1796,7 @@ impl<'local> JNIEnv<'local> {
     }
 
     /// Create a new java int array of supplied length.
+    #[profiling::function]
     pub fn new_int_array(&self, length: jsize) -> Result<JIntArray<'local>> {
         let array: jarray = jni_non_null_call!(self.internal, NewIntArray, length);
         let array = unsafe { JIntArray::from_raw(array) };
@@ -1938,6 +1942,7 @@ impl<'local> JNIEnv<'local> {
     /// and `Err` is returned.
     ///
     /// [`array.length`]: struct.JNIEnv.html#method.get_array_length
+    #[profiling::function]
     pub fn get_int_array_region<'other_local>(
         &self,
         array: impl AsRef<JIntArray<'other_local>>,

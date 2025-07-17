@@ -25,6 +25,7 @@ jni-sys = "0.3.0"
 libloading = { version = "0.7", optional = true }
 log = "0.4.4"
 thiserror = "1.0.20"
+profiling = "1.0.17"
 
 [build-dependencies]
 walkdir = "2"
