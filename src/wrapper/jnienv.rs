@@ -1366,7 +1366,7 @@ impl<'local> JNIEnv<'local> {
         O: AsRef<JObject<'other_local>>,
         T: Into<JNIString> + AsRef<str>,
     {
-        profiling::scope!(name);
+        profiling::scope!("JNI method", name);
         let obj = obj.as_ref();
         non_null!(obj, "call_method obj argument");
 
@@ -1425,7 +1425,7 @@ impl<'local> JNIEnv<'local> {
         T: Desc<'local, JClass<'other_local>>,
         V: Into<JNIString> + AsRef<str>,
     {
-        profiling::scope!(name);
+        profiling::scope!("JNI static method", name);
         let parsed = TypeSignature::from_str(&sig)?;
         if parsed.args.len() != args.len() {
             return Err(Error::InvalidArgList(parsed));
